@@ -1,5 +1,4 @@
 ssh = require('ssh2')
-
 path = require('path')
 
 Connection = require('../Connection')

@@ -1,1 +1,1 @@
-module.exports = require('./FileStorage');
+module.exports = require('./lib/FileStorage');

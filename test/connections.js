@@ -24,7 +24,7 @@ describe('connections',function(){
 
     before(function(){
         for(var i in connectionUrls){
-            connections[i] = new (require('../connections/' + i))(connectionUrls[i]);
+            connections[i] = new (require('../lib/connections/' + i))(connectionUrls[i]);
         }
     })
 
