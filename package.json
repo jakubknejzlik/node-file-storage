@@ -1,7 +1,7 @@
 {
   "name": "file-storage",
   "description": "File storage for storing/retrieving files from various sources",
-  "version": "0.1.14",
+  "version": "1.0.0",
   "author": {
     "name": "Jakub Knejzlik",
     "email": "jakub.knejzlik@gmail.com"
