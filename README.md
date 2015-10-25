@@ -1,6 +1,6 @@
 # file-storage
 
-[![Build Status](https://travis-ci.org/jakubknejzlik/js-core-data.svg?branch=master)](https://travis-ci.org/jakubknejzlik/js-core-data)
+[![Build Status](https://travis-ci.org/jakubknejzlik/node-file-storage.svg?branch=master)](https://travis-ci.org/jakubknejzlik/node-file-storage)
 [![NPM Version][npm-image]][npm-url]
 [![NPM Downloads][downloads-image]][downloads-url]
 
