@@ -24,26 +24,27 @@ describe('filestorage',function(){
     })
 
     it('should store files',function(done){
-        async.forEach(fms,function(fm,cb){
-            fm.saveStream(fs.createReadStream(__dirname + '/test.txt'),function(err,info){
-                if(err)return cb(err);
-                fm.fileId = info.id;
+        async.forEach(fms,function(storage,cb){
+            storage.saveStream(fs.createReadStream(__dirname + '/test.txt')).then(function(info){
+                storage.fileId = info.id;
                 cb();
-            })
+            }).catch(cb)
         },done)
     })
 
     it('should delete files',function(done){
         async.forEach(fms,function(fm,cb){
-            fm.remove(fm.fileId,cb)
+            fm.remove(fm.fileId).then(cb).catch(cb)
         },done)
     })
 
 
     it('should store files',function(done){
         async.forEach(fms,function(fm,cb){
-            fm.saveStream(fs.createReadStream(__dirname + '/test.txt'),cb)
-        },done)
+            fm.saveStream(fs.createReadStream(__dirname + '/test.txt')).then(function(info){
+                cb()
+            }).catch(cb)
+        },done);
     })
 
 })

@@ -13,7 +13,7 @@ var connectionUrls = {}
 connectionUrls['file'] = 'file://localhost/tmp';
 //connectionUrls['s3'] = 's3://{key}:{privateKey}@{bucket}?region=eu-central-1';
 //connectionUrls['ftp'] = 'ftp://file-manager-test.wz.cz:...@file-manager-test.wz.cz';
-//connectionUrls['sftp'] = 'sftp://root@vps.knejzlik.cz/tmp?privateKey='+encodeURIComponent(fs.readFileSync(homeDir('~/.ssh/id_dsa')))+'&passphrase=...'
+//connectionUrls['sftp'] = 'sftp://{user}@{host}/{path}?privateKey='+encodeURIComponent(fs.readFileSync(homeDir('~/.ssh/id_dsa')))+'&passphrase=...'
 //connectionUrls['mongodb'] = 'mongodb://localhost/fs-test';
 //connectionUrls['rackspace'] = 'rackspace://jakubknejzlik:...@...';
 

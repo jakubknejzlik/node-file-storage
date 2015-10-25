@@ -3,8 +3,10 @@ streamBuffers = require('stream-buffers');
 url = require('url')
 queryString = require('query-string')
 md5 = require('md5')
-
+Q = require('q');
 GenericPool = require('generic-pool')
+uuid = require('uuid')
+convert = require('unit-converter')
 
 class FileManager
   constructor:(@settings)->
@@ -31,55 +33,78 @@ class FileManager
       destroy:(connection)=>
         connection.close(()->)
       max: @settings.maxConnections or 1,
-      idleTimeoutMillis:1000*(@settings.ttl or 60)
+      idleTimeoutMillis:convert(@settings.ttl or '60s').to('s')
     })
 
 
   saveStream: (stream, id, callback) ->
+    deferred = Q.defer()
     if typeof id is 'function'
       callback = id
       id = @getNewId()
-    callback = callback or ()->
+    id = String(id)
     @pool.acquire((err,connection)=>
+      return deferred.reject(err) if err
       connection.saveStream(stream,id,(err,info)=>
         @pool.release(connection)
-        callback(err,info)
+        return deferred.reject(err) if err
+        info.id = id
+        deferred.resolve(info)
       )
     )
+    return deferred.promise.nodeify(callback)
 
   saveData:(data,id,callback)->
+    deferred = Q.defer()
+    if typeof id is 'function'
+      callback = id
+      id = @getNewId()
+    id = String(id)
     streamBuffer = new streamBuffers.ReadableStreamBuffer()
     streamBuffer.put(data)
-    @saveStream(streamBuffer,String(id),callback)
+    @saveStream(streamBuffer,id,(err,info)->
+      return deferred.reject(err) if err
+      info.id = id
+      deferred.resolve(info)
+    )
     streamBuffer.destroySoon()
+    return deferred.promise.nodeify(callback)
 
 
   getStream: (id, callback) ->
-    callback = callback or ()->
+    deferred = Q.defer()
     @pool.acquire((err,connection)=>
       connection.getStream(id,(err, stream)=>
         @pool.release(connection)
-        return callback(err) if err
-        callback(null, stream)
+        return deferred.reject(err) if err
+        deferred.resolve(stream)
       )
     )
+    return deferred.promise.nodeify(callback)
 
   getData:(id,callback)->
-    callback = callback or ()->
+    deferred = Q.defer()
     @getStream(String(id),(err,stream)=>
-      return callback(err) if err
-      streamToBuffer(stream,callback)
+      return deferred.reject(err) if err
+      streamToBuffer(stream,(err,data)->
+        return deferred.reject(err) if err
+        deferred.resolve(data)
+      )
     )
+    return deferred.promise.nodeify(callback)
 
   getNewId:()->
-    return md5((Math.random() * 100000) + Date.now())
+    return uuid.v4()
 
   remove: (id, callback) ->
+    deferred = Q.defer()
     @pool.acquire((err,connection)=>
       connection.remove(String(id),(err)=>
         @pool.release(connection)
-        callback(err)
+        return deferred.reject(err) if err
+        deferred.resolve()
       )
     )
+    return deferred.promise.nodeify(callback)
 
 module.exports = FileManager
