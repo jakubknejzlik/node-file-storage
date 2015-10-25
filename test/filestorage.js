@@ -5,7 +5,7 @@ var streamBuffers = require('stream-buffers');
 var streamToBuffer = require('stream-to-buffer');
 var async = require('async')
 
-var FileManager = require('../index.js');
+var FileStorage = require('../index.js');
 
 
 //var tmpDir = __dirname + '/tmp'
@@ -17,7 +17,7 @@ describe('filestorage',function(){
 
     it('should connect using fs',function(done){
         async.forEach(urls,function(url,cb){
-            var fm = new FileManager(url); // supply valid credentials
+            var fm = new FileStorage(url); // supply valid credentials
             fms.push(fm);
             cb()
         },done)
