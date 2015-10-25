@@ -2,7 +2,7 @@
   "name": "file-storage",
   "description": "File storage for storing/retrieving files from various sources",
   "version": "1.0.0",
-  "license":"MIT",
+  "license": "MIT",
   "author": {
     "name": "Jakub Knejzlik",
     "email": "jakub.knejzlik@gmail.com"
@@ -24,7 +24,7 @@
     "ssh2": "^0.4.10",
     "stream-buffers": "^2.2.0",
     "stream-to-buffer": "^0.1.0",
-    "unit-converter": "^1.0.1",
+    "unit-converter": "^1.0.2",
     "uuid": "^2.0.1",
     "ytdl": "^0.3.5"
   },
@@ -39,5 +39,5 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/jakubknejzlik/node-file-storage.git"
-  },
+  }
 }
