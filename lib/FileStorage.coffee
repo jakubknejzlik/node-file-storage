@@ -7,6 +7,8 @@ Q = require('q');
 GenericPool = require('generic-pool')
 uuid = require('uuid')
 convert = require('unit-converter')
+PassThrough = require('stream').PassThrough
+
 
 class FileManager
   constructor:(@settings)->
@@ -45,7 +47,11 @@ class FileManager
     id = String(id)
     @pool.acquire((err,connection)=>
       return deferred.reject(err) if err
-      connection.saveStream(stream,id,(err,info)=>
+
+      passThrough = new PassThrough()
+      stream.pipe(passThrough)
+
+      connection.saveStream(passThrough,id,(err,info)=>
         @pool.release(connection)
         return deferred.reject(err) if err
         info.id = id
