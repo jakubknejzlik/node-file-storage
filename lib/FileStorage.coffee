@@ -68,12 +68,12 @@ class FileManager
     id = String(id)
     streamBuffer = new streamBuffers.ReadableStreamBuffer()
     streamBuffer.put(data)
+    streamBuffer.stop()
     @saveStream(streamBuffer,id,(err,info)->
       return deferred.reject(err) if err
       info.id = id
       deferred.resolve(info)
     )
-    streamBuffer.destroySoon()
     return deferred.promise.nodeify(callback)
 
 

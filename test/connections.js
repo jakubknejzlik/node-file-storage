@@ -11,7 +11,8 @@ var homeDir = require('expand-home-dir');
 var connectionUrls = {}
 
 connectionUrls['file'] = 'file://localhost/tmp';
-//connectionUrls['s3'] = 's3://{key}:{privateKey}@{bucket}?region=eu-central-1';
+
+if(process.env.S3_URL)connectionUrls['s3'] = process.env.S3_URL;
 //connectionUrls['ftp'] = 'ftp://file-manager-test.wz.cz:...@file-manager-test.wz.cz';
 //connectionUrls['sftp'] = 'sftp://{user}@{host}/{path}?privateKey='+encodeURIComponent(fs.readFileSync(homeDir('~/.ssh/id_dsa')))+'&passphrase=...'
 //connectionUrls['mongodb'] = 'mongodb://localhost/fs-test';
@@ -66,7 +67,7 @@ describe('connections',function(){
     it('should override stream',function(done){
         async.forEach(Object.keys(connections),function(connectionType,cb){
             var connection = connections[connectionType];
-            connection.saveStream(fs.createReadStream(__dirname + '/test2.txt'),'test',function(err,info){
+            connection.saveStream(fs.createReadStream(__dirname + '/test2.txt'),'test2.txt',function(err,info){
                 if(err)return cb(err);
                 connection.fileId = info.id;
                 cb();
@@ -81,7 +82,7 @@ describe('connections',function(){
                 if(err)return done(err);
                 streamToBuffer(stream,function(err,buffer){
                     if(err)return cb(err);
-                    assert.equal(fs.readFileSync(__dirname + '/test2.txt').toString('utf-8'),buffer.toString('utf-8'))
+                    assert.equal(fs.readFileSync(__dirname + '/' + connection.fileId).toString('utf-8'),buffer.toString('utf-8'))
                     cb()
                 })
             })

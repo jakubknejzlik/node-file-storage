@@ -27,7 +27,7 @@ class Connection
   getStream: (id, callback) ->
     callback(new Error('not implemented'))
 
-  getPath:(id)->
+  getPath:(id = '')->
     return path.join(@settings.pathname or '',String(id))
 
 module.exports = Connection
