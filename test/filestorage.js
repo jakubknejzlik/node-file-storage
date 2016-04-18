@@ -38,20 +38,12 @@ describe('filestorage',function(){
     })
 
     it('should delete files',function(done){
+        this.timeout(300000)
         async.forEach(fms,function(fm,cb){
             async.forEach(fm.fileIds,function(fileId,cb) {
                 fm.remove(fileId).then(cb).catch(cb)
             },cb)
         },done)
     })
-
-
-    // it('should store files',function(done){
-    //     async.forEach(fms,function(fm,cb){
-    //         fm.saveStream(fs.createReadStream(__dirname + '/test.txt')).then(function(info){
-    //             cb()
-    //         }).catch(cb)
-    //     },done);
-    // })
 
 })
