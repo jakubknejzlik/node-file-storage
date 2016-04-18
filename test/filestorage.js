@@ -26,7 +26,7 @@ describe('filestorage',function(){
 
     it('should store files',function(done){
         this.timeout(300000)
-        async.times(200,function(i,cb){
+        async.times(20,function(i,cb){
             async.forEach(fms,function(storage,cb){
                 storage.saveData(fs.readFileSync(__dirname + '/test.txt'),'test/' + i + '.txt').then(function(info){
                     storage.fileIds = storage.fileIds || [];
