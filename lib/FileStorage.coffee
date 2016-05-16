@@ -83,9 +83,16 @@ class FileManager
       connection.getStream(id,(err, stream)=>
         return deferred.reject(err) if err
         deferred.resolve(stream)
-        stream.on('close',()=>
-          @pool.release(connection)
-        )
+        released = no
+        releaseCallback = ()=>
+          console.log('release')
+          @pool.release(connection) if not released
+          released = yes
+
+        stream.on('error',releaseCallback)
+        stream.on('finish',releaseCallback)
+        stream.on('end',releaseCallback)
+        stream.on('close',releaseCallback)
       )
     )
     return deferred.promise.nodeify(callback)
