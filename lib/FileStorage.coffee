@@ -84,6 +84,9 @@ class FileManager
         @pool.release(connection)
         return deferred.reject(err) if err
         deferred.resolve(stream)
+        stream.on('close',()=>
+          @pool.release(connection)
+        )
       )
     )
     return deferred.promise.nodeify(callback)
