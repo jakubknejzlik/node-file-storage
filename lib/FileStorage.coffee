@@ -81,7 +81,6 @@ class FileManager
     deferred = Q.defer()
     @pool.acquire((err,connection)=>
       connection.getStream(id,(err, stream)=>
-        @pool.release(connection)
         return deferred.reject(err) if err
         deferred.resolve(stream)
         stream.on('close',()=>
