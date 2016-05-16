@@ -85,7 +85,6 @@ class FileManager
         deferred.resolve(stream)
         released = no
         releaseCallback = ()=>
-          console.log('release')
           @pool.release(connection) if not released
           released = yes
 
