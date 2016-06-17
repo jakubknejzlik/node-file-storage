@@ -28,6 +28,6 @@ class Connection
     callback(new Error('not implemented'))
 
   getPath:(id = '')->
-    return path.join(@settings.pathname or '',String(id))
+    return path.join(@settings.pathname or '/',String(id))
 
 module.exports = Connection

@@ -48,6 +48,10 @@ class S3Connection extends Connection
       Bucket: @_bucketName()
     },callback)
 
+  getPath: ()->
+    path = super
+    path = path.substring(1)
+    return path
 
   _partSize:()->
     return @settings.partSize or 1*1024*1024
