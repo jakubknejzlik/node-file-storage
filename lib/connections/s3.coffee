@@ -10,7 +10,8 @@ class S3Connection extends Connection
       accessKeyId: @_getKeyId()
       secretAccessKey: @_getSecretKey(),
       signatureVersion:@_getSignatureVersion(),
-      region:@_getRegion()
+      region:@_getRegion(),
+      logger: if process.env.FILE_STORAGE_S3_LOGGING then process.stdout else null
     })
     callback()
 
