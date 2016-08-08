@@ -33,7 +33,7 @@ class FileManager
         )
       destroy:(connection)=>
         connection.close(()->)
-      max: @settings.maxConnections or 1,
+      max: @settings.maxConnections or 10,
       idleTimeoutMillis:convert(@settings.ttl or '60s').to('s')
     })
 
