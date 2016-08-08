@@ -1,5 +1,3 @@
-streamToBuffer = require('stream-to-buffer');
-streamBuffers = require('stream-buffers');
 url = require('url')
 queryString = require('query-string')
 md5 = require('md5')
@@ -8,7 +6,8 @@ GenericPool = require('generic-pool')
 uuid = require('uuid')
 convert = require('unit-converter')
 PassThrough = require('stream').PassThrough
-
+streamifier = require('streamifier')
+streamToBuffer = require('stream-to-buffer');
 
 class FileManager
   constructor:(@settings)->
@@ -66,9 +65,7 @@ class FileManager
       callback = id
       id = @getNewId()
     id = String(id)
-    streamBuffer = new streamBuffers.ReadableStreamBuffer()
-    streamBuffer.put(data)
-    streamBuffer.stop()
+    streamBuffer = streamifier.createReadStream(data)
     @saveStream(streamBuffer,id,(err,info)->
       return deferred.reject(err) if err
       info.id = id
