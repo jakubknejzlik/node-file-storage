@@ -1,6 +1,5 @@
 var assert = require('assert');
 var fs = require('fs');
-var streamBuffers = require('stream-buffers');
 var streamToBuffer = require('stream-to-buffer');
 
 var async = require('async');
