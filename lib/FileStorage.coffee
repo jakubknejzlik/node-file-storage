@@ -1,13 +1,11 @@
 url = require('url')
 queryString = require('query-string')
 md5 = require('md5')
-Q = require('q');
+Promise = require('bluebird');
 GenericPool = require('generic-pool')
 uuid = require('uuid')
 convert = require('unit-converter')
 PassThrough = require('stream').PassThrough
-streamifier = require('streamifier')
-streamToBuffer = require('stream-to-buffer');
 
 class FileManager
   constructor:(@settings)->
@@ -27,63 +25,62 @@ class FileManager
       create: (callback)=>
         Connection = require(__dirname + "/connections/" + @type + ".js")
         connection = new Connection(@settings)
-        connection.connect((err)=>
-          callback(err) if err
-          callback(null,connection)
+        connection.connect().then(()->
+          callback(null, connection)
+        ).catch((err)->
+          callback(err)
         )
       destroy:(connection)=>
-        connection.close(()->)
+        connection.close()
       max: @settings.maxConnections or 10,
       idleTimeoutMillis:convert(@settings.ttl or '60s').to('s')
     })
 
 
-  saveStream: (stream, id, callback) ->
-    deferred = Q.defer()
-    if typeof id is 'function'
-      callback = id
-      id = @getNewId()
-    id = String(id)
-    @pool.acquire((err,connection)=>
-      return deferred.reject(err) if err
+  getConnection: ()->
+    return new Promise((resolve, reject)=>
+      @pool.acquire((err,connection)=>
+        return reject(err) if err
+        resolve(connection)
+      )
+    )
+
+  releaseConnection: (connection)->
+    @pool.release(connection)
+    return Promise.resolve()
+
+    
+  saveStream: (stream, id = @getNewId()) ->
+    return @getConnection().then((connection)=>
+      id = String(id)
 
       passThrough = new PassThrough()
       stream.pipe(passThrough)
 
-      connection.saveStream(passThrough,id,(err,info)=>
-        @pool.release(connection)
-        return deferred.reject(err) if err
+      return connection.saveStream(passThrough,id).then((info)=>
         info.id = id
-        deferred.resolve(info)
+        return info
+      ).finally(()=>
+        @releaseConnection(connection)
       )
     )
-    return deferred.promise.nodeify(callback)
 
-  saveData:(data,id,callback)->
-    deferred = Q.defer()
-    if typeof id is 'function'
-      callback = id
-      id = @getNewId()
-    id = String(id)
-    @pool.acquire((err,connection)=>
-      return deferred.reject(err) if err
-      connection.saveData(data,id,(err,info)=>
-        @pool.release(connection)
-        return deferred.reject(err) if err
+  saveData:(data, id = @getNewId())->
+    return @getConnection().then((connection)=>
+      id = String(id)
+      return connection.saveData(data,id).then((info)=>
         info.id = id
-        deferred.resolve(info)
+        return info
+      ).finally(()=>
+        @releaseConnection(connection)
       )
     )
-    return deferred.promise.nodeify(callback)
 
 
-  getStream: (id, callback) ->
-    deferred = Q.defer()
-    @pool.acquire((err,connection)=>
-      return deferred.reject(err) if err
-      connection.getStream(id,(err, stream)=>
-        return deferred.reject(err) if err
-        deferred.resolve(stream)
+  getStream: (id) ->
+    return @getConnection().then((connection)=>
+      return connection.getStream(id).then((stream)=>
+
         released = no
         releaseCallback = ()=>
           @pool.release(connection) if not released
@@ -93,34 +90,27 @@ class FileManager
         stream.on('finish',releaseCallback)
         stream.on('end',releaseCallback)
         stream.on('close',releaseCallback)
-      )
-    )
-    return deferred.promise.nodeify(callback)
+        setTimeout(releaseCallback,60000)
 
-  getData:(id,callback)->
-    deferred = Q.defer()
-    @pool.acquire((err,connection)=>
-      return deferred.reject(err) if err
-      connection.getData(id,(err, data)=>
-        @pool.release(connection)
-        return deferred.reject(err) if err
-        deferred.resolve(data)
+        return stream
       )
     )
-    return deferred.promise.nodeify(callback)
+
+  getData:(id)->
+    return @getConnection().then((connection)=>
+      return connection.getData(id).finally(()=>
+        @releaseConnection(connection)
+      )
+    )
 
   getNewId:()->
     return uuid.v4()
 
-  remove: (id, callback) ->
-    deferred = Q.defer()
-    @pool.acquire((err,connection)=>
-      connection.remove(String(id),(err)=>
-        @pool.release(connection)
-        return deferred.reject(err) if err
-        deferred.resolve()
+  remove: (id) ->
+    return @getConnection().then((connection)=>
+      return connection.remove(id).finally(()=>
+        @releaseConnection(connection)
       )
     )
-    return deferred.promise.nodeify(callback)
 
 module.exports = FileManager

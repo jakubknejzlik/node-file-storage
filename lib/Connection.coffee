@@ -1,9 +1,9 @@
 url = require('url')
 queryString = require('query-string')
 path = require('path')
-PassThrough = require('stream').PassThrough
 streamifier = require('streamifier')
 streamToBuffer = require('stream-to-buffer');
+Promise = require('bluebird')
 
 class Connection
   constructor:(@settings)->
@@ -17,29 +17,29 @@ class Connection
       for key,value of query
         @settings[key] = value
 
-  connect:(callback)->
-    callback(new Error('not implemented'))
+  connect:()->
+    return Promise.reject('not implemented')
 
-  close:(callback)->
-    callback(new Error('not implemented'))
+  close:()->
+    return Promise.reject('not implemented')
 
+  saveStream: (stream, id) ->
+    return Promise.reject('not implemented')
 
-  saveStream: (stream, id, callback) ->
-    callback(new Error('not implemented'))
-
-  saveData: (data, id, callback) ->
+  saveData: (data, id) ->
     stream = streamifier.createReadStream(data)
-    @saveStream(stream, id, callback)
+    return @saveStream(stream, id)
 
-  getStream: (id, callback) ->
-    callback(new Error('not implemented'))
+  getStream: (id) ->
+    return Promise.reject('not implemented')
 
-  getData: (id, callback) ->
-    @getStream(id,(err,stream)=>
-      return deferred.reject(err) if err
-      streamToBuffer(stream,(err,data)->
-        return deferred.reject(err) if err
-        deferred.resolve(data)
+  getData: (id) ->
+    return @getStream(id).then((stream)=>
+      return new Promise((resolve, reject)->
+        streamToBuffer(stream,(err,data)->
+          return reject(err) if err
+          resolve(data)
+        )
       )
     )
 

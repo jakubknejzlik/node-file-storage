@@ -2,7 +2,7 @@ var assert = require('assert');
 var fs = require('fs');
 var streamToBuffer = require('stream-to-buffer');
 
-var async = require('async');
+var Promise = require('bluebird')
 var homeDir = require('expand-home-dir');
 
 //var Connection = require('../connections/file');
@@ -28,88 +28,86 @@ describe('connections',function(){
         }
     })
 
-    it('should connect',function(done){
-        async.forEach(Object.keys(connections),function(connectionType,cb){
-            connections[connectionType].connect(cb);
-        },done);
+    before('should connect',function(){
+        Promise.each(Object.keys(connections),function(connectionType){
+            return connections[connectionType].connect()
+        })
     })
 
-    it('should store stream',function(done){
-        async.forEach(attempts,function(x,_cb){
-            async.forEach(Object.keys(connections),function(connectionType,cb){
+    it('should store stream',function(){
+        Promise.each(attempts,function(x,_cb){
+            Promise.each(Object.keys(connections),function(connectionType,cb){
                 var connection = connections[connectionType];
-                connection.saveStream(fs.createReadStream(__dirname + '/test.txt'),'test.txt',function(err,info){
-                    if(err)return cb(err);
+                connection.saveStream(fs.createReadStream(__dirname + '/test.txt'),'test.txt').then(function(info){
                     connection.fileId = info.id;
-                    cb();
                 });
-            },_cb)
-        },done)
+            })
+        })
     })
 
-    it('should load stream',function(done){
-        async.forEach(attempts,function(x,_cb){
-            async.forEach(Object.keys(connections),function(connectionType,cb){
+    it('should load stream',function(){
+        Promise.each(attempts,function(x){
+            Promise.each(Object.keys(connections),function(connectionType,cb){
                 var connection = connections[connectionType];
-                connection.getStream(connection.fileId,function(err,stream){
-                    if(err)return done(err);
-                    streamToBuffer(stream,function(err,buffer){
-                        if(err)return cb(err);
-                        assert.equal(fs.readFileSync(__dirname + '/test.txt').toString('utf-8'),buffer.toString('utf-8'))
-                        cb()
+                connection.getStream(connection.fileId).then(function(stream){
+                    return new Promise(function(reject, resolve) {
+                        streamToBuffer(stream, function (err, buffer) {
+                            if (err)return reject(err);
+                            assert.equal(fs.readFileSync(__dirname + '/test.txt').toString('utf-8'), buffer.toString('utf-8'))
+                            resolve()
+                        })
                     })
                 })
-            },_cb)
-        },done)
+            })
+        })
     })
 
-    it('should override stream',function(done){
-        async.forEach(Object.keys(connections),function(connectionType,cb){
-            var connection = connections[connectionType];
-            connection.saveStream(fs.createReadStream(__dirname + '/test2.txt'),'test2.txt',function(err,info){
-                if(err)return cb(err);
-                connection.fileId = info.id;
-                cb();
-            });
-        },done)
-    })
+    describe('stream overriding',function(){
+        before('should override stream',function(){
+            Promise.each(Object.keys(connections),function(connectionType){
+                var connection = connections[connectionType];
+                connection.saveStream(fs.createReadStream(__dirname + '/test2.txt'),'test2.txt').then(function(info){
+                    connection.fileId = info.id;
+                });
+            })
+        })
 
-    it('should load overridden stream',function(done){
-        async.forEach(Object.keys(connections),function(connectionType,cb){
-            var connection = connections[connectionType];
-            connection.getStream(connection.fileId,function(err,stream){
-                if(err)return done(err);
-                streamToBuffer(stream,function(err,buffer){
-                    if(err)return cb(err);
-                    assert.equal(fs.readFileSync(__dirname + '/' + connection.fileId).toString('utf-8'),buffer.toString('utf-8'))
-                    cb()
+        it('should load overridden stream',function(){
+            Promise.each(Object.keys(connections),function(connectionType){
+                var connection = connections[connectionType];
+                connection.getStream(connection.fileId).then(function(stream){
+                    return new Promise(function(resolve, reject){
+                        streamToBuffer(stream,function(err,buffer){
+                            if(err)return reject(err);
+                            assert.equal(fs.readFileSync(__dirname + '/' + connection.fileId).toString('utf-8'),buffer.toString('utf-8'))
+                            resolve()
+                        })
+                    })
                 })
             })
-        },done)
+        })
+
+        it('should remove file',function(){
+            Promise.each(Object.keys(connections),function(connectionType){
+                var connection = connections[connectionType];
+                return connection.remove(connection.fileId)
+            });
+        })
     })
 
-    it('should remove file',function(done){
-        async.forEach(Object.keys(connections),function(connectionType,cb){
+    it('should return error on nonexisting file',function(){
+        Promise.each(Object.keys(connections),function(connectionType){
             var connection = connections[connectionType];
-            connection.remove(connection.fileId,cb)
-        },done);
-    })
-
-    it('should return error on nonexisting file',function(done){
-        async.forEach(Object.keys(connections),function(connectionType,cb){
-            var connection = connections[connectionType];
-            connection.getStream('blahfilenonexisting',function(err,stream){
-                assert.ok(!!err)
+            connection.getStream('blahfilenonexisting').then(function(stream){
                 assert.ok(!stream)
-                cb()
             })
-        },done);
+        });
     })
 
-    it('should disconnect',function(done){
-        async.forEach(Object.keys(connections),function(connectionType,cb){
+    it('should disconnect',function(){
+        Promise.each(Object.keys(connections),function(connectionType){
             var connection = connections[connectionType];
-            connection.close(cb)
-        },done);
+            return connection.close()
+        });
     })
 })

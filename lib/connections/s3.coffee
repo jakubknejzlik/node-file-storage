@@ -1,11 +1,12 @@
 aws = require('aws-sdk')
 fs = require('fs')
 mime = require('mime-types')
+Promise = require('bluebird')
 
 Connection = require('../Connection')
 
 class S3Connection extends Connection
-  connect:(callback)->
+  connect: ()->
     @client = new aws.S3({
       accessKeyId: @_getKeyId()
       secretAccessKey: @_getSecretKey(),
@@ -13,47 +14,57 @@ class S3Connection extends Connection
       region:@_getRegion(),
       logger: if process.env.FILE_STORAGE_S3_LOGGING then process.stdout else null
     })
-    callback()
+    return Promise.resolve()
 
-  close:(callback)->
-    callback()
+  close: ()->
+    return Promise.resolve()
 
-  saveStream: (stream, id, callback) ->
-    @_saveObject(stream, id, callback)
+  saveStream: (stream, id) ->
+    return @_saveObject(stream, id)
 
-  saveData: (data, id, callback)->
-    @_saveObject(data, id, callback)
+  saveData: (data, id)->
+    return @_saveObject(data, id)
 
-  _saveObject: (object, id, callback) ->
-    upload = new aws.S3.ManagedUpload({
-      service: @client,
-      params:{
+  _saveObject: (object, id) ->
+    return new Promise((resolve, reject)=>
+      upload = new aws.S3.ManagedUpload({
+        service: @client,
+        params:{
+          Bucket: @_bucketName(),
+          Key: @getPath(id),
+          Body: object,
+          ContentType: mime.lookup(id) or 'application/octet-stream'
+        }
+      })
+      upload.send((err,info)->
+        info.id = id if info
+        return reject(err) if err
+        resolve(info)
+      )
+    )
+
+  getStream: (id) ->
+    return new Promise((resolve, reject)=>
+      stream = @client.getObject({
         Bucket: @_bucketName(),
-        Key: @getPath(id),
-        Body: object,
-        ContentType: mime.lookup(id) or 'application/octet-stream'
-      }
-    })
-    upload.send((err,info)->
-      info.id = id if info
-      callback(err,info)
+        Key: @getPath(id)
+      }).createReadStream()
+      stream.on('error',reject)
+      stream.once('readable',()->
+        resolve(stream)
+      )
     )
 
-  getStream: (id, callback) ->
-    stream = @client.getObject({
-      Bucket: @_bucketName(),
-      Key: @getPath(id)
-    }).createReadStream()
-    stream.on('error',callback)
-    stream.once('readable',()->
-      callback(null,stream)
+  remove: (id) ->
+    return new Promise((resolve, reject)=>
+      @client.deleteObject({
+        Key:@getPath(id),
+        Bucket: @_bucketName()
+      },(err,result)->
+        return reject(err) if err
+        resolve(result)
+      )
     )
-
-  remove: (id, callback) ->
-    @client.deleteObject({
-      Key:@getPath(id),
-      Bucket: @_bucketName()
-    },callback)
 
   getPath: ()->
     path = super

@@ -3,6 +3,7 @@ var fs = require('fs');
 var homeDir = require('expand-home-dir');
 var streamToBuffer = require('stream-to-buffer');
 var async = require('async')
+var Promise = require('bluebird')
 
 var FileStorage = require('../index.js');
 
@@ -10,17 +11,15 @@ var FileStorage = require('../index.js');
 //var tmpDir = __dirname + '/tmp'
 
 
-describe('filestorage',function(){
+describe.only('filestorage',function(){
     var urls = ['file://localhost/tmp?ttl=1']
     var fms = []
 
-    before(function(done) {
+    before(function() {
         if(process.env.S3_URL)urls.push(process.env.S3_URL)
-        async.forEach(urls, function (url, cb) {
-            var fm = new FileStorage(url); // supply valid credentials
-            fms.push(fm);
-            cb()
-        }, done)
+        Promise.each(urls, function (url) {
+            fms.push(new FileStorage(url))
+        })
     })
 
     it('should store files',function(done){
@@ -40,7 +39,9 @@ describe('filestorage',function(){
         this.timeout(300000)
         async.forEach(fms,function(fm,cb){
             async.forEach(fm.fileIds,function(fileId,cb) {
-                fm.remove(fileId).then(cb).catch(cb)
+                fm.remove(fileId).then(function() {
+                    cb()
+                }).catch(cb)
             },cb)
         },done)
     })
