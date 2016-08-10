@@ -1,6 +1,9 @@
 url = require('url')
 queryString = require('query-string')
 path = require('path')
+PassThrough = require('stream').PassThrough
+streamifier = require('streamifier')
+streamToBuffer = require('stream-to-buffer');
 
 class Connection
   constructor:(@settings)->
@@ -24,8 +27,21 @@ class Connection
   saveStream: (stream, id, callback) ->
     callback(new Error('not implemented'))
 
+  saveData: (data, id, callback) ->
+    stream = streamifier.createReadStream(data)
+    @saveStream(stream, id, callback)
+
   getStream: (id, callback) ->
     callback(new Error('not implemented'))
+
+  getData: (id, callback) ->
+    @getStream(id,(err,stream)=>
+      return deferred.reject(err) if err
+      streamToBuffer(stream,(err,data)->
+        return deferred.reject(err) if err
+        deferred.resolve(data)
+      )
+    )
 
   getPath:(id = '')->
     return path.join(@settings.pathname or '/',String(id))

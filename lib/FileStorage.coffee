@@ -65,11 +65,14 @@ class FileManager
       callback = id
       id = @getNewId()
     id = String(id)
-    streamBuffer = streamifier.createReadStream(data)
-    @saveStream(streamBuffer,id,(err,info)->
+    @pool.acquire((err,connection)=>
       return deferred.reject(err) if err
-      info.id = id
-      deferred.resolve(info)
+      connection.saveData(data,id,(err,info)=>
+        @pool.release(connection)
+        return deferred.reject(err) if err
+        info.id = id
+        deferred.resolve(info)
+      )
     )
     return deferred.promise.nodeify(callback)
 
@@ -77,6 +80,7 @@ class FileManager
   getStream: (id, callback) ->
     deferred = Q.defer()
     @pool.acquire((err,connection)=>
+      return deferred.reject(err) if err
       connection.getStream(id,(err, stream)=>
         return deferred.reject(err) if err
         deferred.resolve(stream)
@@ -95,9 +99,10 @@ class FileManager
 
   getData:(id,callback)->
     deferred = Q.defer()
-    @getStream(String(id),(err,stream)=>
+    @pool.acquire((err,connection)=>
       return deferred.reject(err) if err
-      streamToBuffer(stream,(err,data)->
+      connection.getData(id,(err, data)=>
+        @pool.release(connection)
         return deferred.reject(err) if err
         deferred.resolve(data)
       )

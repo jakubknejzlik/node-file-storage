@@ -19,12 +19,18 @@ class S3Connection extends Connection
     callback()
 
   saveStream: (stream, id, callback) ->
+    @_saveObject(stream, id, callback)
+
+  saveData: (data, id, callback)->
+    @_saveObject(data, id, callback)
+
+  _saveObject: (object, id, callback) ->
     upload = new aws.S3.ManagedUpload({
-      service:@client,
+      service: @client,
       params:{
         Bucket: @_bucketName(),
         Key: @getPath(id),
-        Body: stream,
+        Body: object,
         ContentType: mime.lookup(id) or 'application/octet-stream'
       }
     })
